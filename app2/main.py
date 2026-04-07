@@ -1,8 +1,20 @@
+# app/main.py
+'''
+uvicorn app2.main:app --reload로 실행 후, 
+http://localhost:8000/health
+'''
 from fastapi import FastAPI
-# uvicorn app2.main:app --reload
-app = FastAPI()  # FastAPI 인스턴스 생성
-# 변경
-@app.get("/")    # GET 요청을 처리하는 엔드포인트
-def root():
-    return {"message": "Hello"}  # JSON 응답 자동 변환
 
+app = FastAPI(
+    title='대출 심사 예측 API (1단계)',
+    description='가장 기본적인 API 뼈대',
+    version='1.0.0'
+)
+
+@app.get('/health')
+async def health_check():
+    # 모델이 아직 없으므로 단순하게 정상(healthy) 상태만 반환합니다.
+    return {
+        "status": "healthy",
+        "model_loaded": False
+    }
