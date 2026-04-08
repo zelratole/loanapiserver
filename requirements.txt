@@ -13,6 +13,7 @@ scikit-learn       # Pipeline, RandomForest, LabelEncoder
 numpy             # 수치 연산
 pandas             # DataFrame 처리
 
+
 # ── 개발 도구 (선택) ──────────────────────────────
 # httpx           # API 테스트 클라이언트
 # pytest           # 단위 테스트
