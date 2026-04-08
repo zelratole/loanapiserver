@@ -35,7 +35,7 @@ jobs:
             git reset --hard FETCH_HEAD
 
             # 3. Dockerfile이 위치한 작업 디렉토리로 이동
-            cd app10
+            
             
             # 4. Docker 이미지 빌드
             sudo docker build -t loan-api-server .
