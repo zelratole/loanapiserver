@@ -16,7 +16,7 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Docker 설치 확인 및 설치
+            # Docker 설치 확인 및 설치 (기존 로직 유지)
             if ! command -v docker &> /dev/null; then
               echo "Docker 미설치 - 설치 시작"
               sudo dnf update -y
@@ -26,17 +26,27 @@ jobs:
               sudo usermod -aG docker $USER
             fi
 
-            cd ~/loanapiserver/app10
-            # 코드 최신화 (Private 레포 인증)
-            git pull https://${{ secrets.GIT_TOKEN }}@github.com/zelratole/loanapiserver.git main
-            # Docker 이미지 빌드
+            # 1. Git Repository 최상위 디렉토리로 이동
+            cd ~/loanapiserver
+            
+            # 2. 코드 강제 최신화 (병합 충돌 방지)
+            # EC2 로컬에 있는 수정 사항을 무시하고 GitHub의 원격 main 브랜치 상태로 강제 덮어쓰기 합니다.
+            git fetch https://${{ secrets.GIT_TOKEN }}@github.com/zelratole/loanapiserver.git main
+            git reset --hard FETCH_HEAD
+
+            # 3. Dockerfile이 위치한 작업 디렉토리로 이동
+            cd app10
+            
+            # 4. Docker 이미지 빌드
             sudo docker build -t loan-api-server .
 
-            # 기존 컨테이너 중지 및 삭제
+            # 5. 기존 컨테이너 중지 및 삭제 (기존 로직 유지)
             sudo docker stop loan-api || true
             sudo docker rm loan-api || true
 
+            # 6. 포트 정리 및 대기 (기존 로직 유지)
             fuser -k 8000/tcp || true
             sleep 2
-            # 새 컨테이너 실행
+            
+            # 7. 새 컨테이너 실행
             sudo docker run -d --name loan-api -p 8000:8000 loan-api-server
