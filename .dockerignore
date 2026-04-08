@@ -3,6 +3,5 @@ __pycache__
 .git
 .github
 .dockerignore
-Dockerfile
 README.md
 .env
