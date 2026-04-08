@@ -18,26 +18,26 @@ jobs:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
-                  # 1. 프로젝트 최상위 폴더로 이동 (이곳에 requirements.txt가 있음)
-                  cd ~/loanapiserver
-                  
-                  # 2. 코드 최신화 (Git 명령어는 프로젝트 최상위에서 치는 것이 가장 안전합니다)
-                  git pull origin main
-                  
-                  # 3. Miniconda 환경 활성화
-                  source ~/miniconda3/etc/profile.d/conda.sh
-                  conda activate mlops
-                  
-                  # 4. 패키지 설치 (현재 위치가 루트이므로 requirements.txt를 정상적으로 찾습니다)
-                  pip install --no-cache-dir --no-build-isolation -r requirements.txt
-                  
-                  # 5. 기존에 실행 중인 서버 종료 (이름을 정확히 매칭하여 안전하게 종료)
-                  pkill -f "uvicorn main:app" || true
-                  sleep 2
-                  
-                  # 6. main.py가 있는 폴더로 진입! (가장 중요한 경로 변경 포인트)
-                  cd app10
-                  
-                  # 7. 서버 백그라운드 실행 (이미 app10 안이므로 app10.main이 아니라 main:app 입니다)
-                  nohup uvicorn main:app --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &
+          script: |
+            # 1. 프로젝트 최상위 폴더로 이동 (이곳에 requirements.txt가 있음)
+            cd ~/loanapiserver
+            
+            # 2. 코드 최신화 (Git 명령어는 프로젝트 최상위에서 치는 것이 가장 안전합니다)
+            git pull origin main
+            
+            # 3. Miniconda 환경 활성화
+            source ~/miniconda3/etc/profile.d/conda.sh
+            conda activate mlops
+            
+            # 4. 패키지 설치 (현재 위치가 루트이므로 requirements.txt를 정상적으로 찾습니다)
+            pip install --no-cache-dir --no-build-isolation -r requirements.txt
+            
+            # 5. 기존에 실행 중인 서버 종료 (이름을 정확히 매칭하여 안전하게 종료)
+            pkill -f "uvicorn main:app" || true
+            sleep 2
+            
+            # 6. main.py가 있는 폴더로 진입! (가장 중요한 경로 변경 포인트)
+            cd app10
+            
+            # 7. 서버 백그라운드 실행 (이미 app10 안이므로 app10.main이 아니라 main:app 입니다)
+            nohup uvicorn main:app --host 0.0.0.0 --port 8000 > /dev/null 2>&1 &
