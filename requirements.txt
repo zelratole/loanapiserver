@@ -2,19 +2,18 @@
 # 설치: pip install -r requirements.txt
 
 # ── 웹 프레임워크 ──────────────────────────────────
-fastapi          # API 프레임워크 (Pydantic v2 기본 지원)
-uvicorn[standard] # ASGI 서버 (개발/운영 공용)
+fastapi>=0.115.0          # API 프레임워크 (Pydantic v2 기본 지원)
+uvicorn[standard]>=0.30.0 # ASGI 서버 (개발/운영 공용)
 
 # ── 데이터 검증 ───────────────────────────────────
-pydantic           # 스키마 검증 (FastAPI 에 포함되나 명시)
+pydantic>=2.7.0           # 스키마 검증 (FastAPI 에 포함되나 명시)
 
 # ── ML / 데이터 처리 ──────────────────────────────
-scikit-learn       # Pipeline, RandomForest, LabelEncoder
-numpy             # 수치 연산
-pandas             # DataFrame 처리
-
+scikit-learn>=1.4.0       # Pipeline, RandomForest, LabelEncoder
+numpy>=1.26.0             # 수치 연산
+pandas>=2.2.0             # DataFrame 처리
 
 # ── 개발 도구 (선택) ──────────────────────────────
-# httpx           # API 테스트 클라이언트
-# pytest           # 단위 테스트
-# pytest-asyncio  # 비동기 테스트
+# httpx>=0.27.0           # API 테스트 클라이언트
+# pytest>=8.0.0           # 단위 테스트
+# pytest-asyncio>=0.23.0  # 비동기 테스트
