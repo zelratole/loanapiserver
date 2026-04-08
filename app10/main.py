@@ -8,7 +8,11 @@ http://localhost:8000/generate
 pip install -U google-genai
 
 
-uvicorn app10.main:app --reload
+uvicorn main:app --reload
+
+http://localhost:8000/docs
+
+
 
 '''
 from fastapi import FastAPI, HTTPException
@@ -16,7 +20,9 @@ from pydantic import BaseModel
 from google import genai
 
 # 1. FastAPI 애플리케이션 초기화
-app = FastAPI()
+app = FastAPI(    title="고객 리뷰 분석 API(변경)",
+    description="Gemini LLM 기반 고객(변경)",
+    version="1.0.2")
 
 # 2. Gemini 클라이언트 초기화 (발급받으신 API 키 적용)
 # 주의: 실제 서비스 배포 시에는 API 키를 코드에 직접 쓰지 않고 환경 변수로 관리해야 합니다.
