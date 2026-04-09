@@ -1,52 +1,58 @@
-name: Deploy to EC2 (Docker)
+name: Build & Deploy to ECR/ECS
 
 on:
   push:
     branches: [main]
+
+env:
+  AWS_REGION: ap-northeast-2
+  ECR_REPOSITORY: mlops-lab/student-16    # 본인 번호로 변경
+  ECS_CLUSTER: mlops-lab-cluster
+  ECS_SERVICE: student-16-loan-api-service-91k5qgcr     # 본인 번호로 변경
+  ECS_TASK_DEFINITION: student-16-loan-api # 본인 번호로 변경
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Deploy to EC2 via SSH
-        uses: appleboy/ssh-action@v1
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. AWS 자격 증명 설정
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_SSH_KEY }}
-          script: |
-            # Docker 설치 확인 및 설치 (기존 로직 유지)
-            if ! command -v docker &> /dev/null; then
-              echo "Docker 미설치 - 설치 시작"
-              sudo dnf update -y
-              sudo dnf install -y docker
-              sudo systemctl start docker
-              sudo systemctl enable docker
-              sudo usermod -aG docker $USER
-            fi
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-            # 1. Git Repository 최상위 디렉토리로 이동
-            cd ~/loanapiserver
-            
-            # 2. 코드 강제 최신화 (병합 충돌 방지)
-            # EC2 로컬에 있는 수정 사항을 무시하고 GitHub의 원격 main 브랜치 상태로 강제 덮어쓰기 합니다.
-            git fetch https://${{ secrets.GIT_TOKEN }}@github.com/zelratole/loanapiserver.git main
-            git reset --hard FETCH_HEAD
+      # 3. ECR 로그인
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-            # 3. Dockerfile이 위치한 작업 디렉토리로 이동
-            
-            
-            # 4. Docker 이미지 빌드
-            sudo docker build -t loan-api-server .
+      # 4. Docker 이미지 빌드 & ECR Push
+      - name: Build and push Docker image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        id: build-image
 
-            # 5. 기존 컨테이너 중지 및 삭제 (기존 로직 유지)
-            sudo docker stop loan-api || true
-            sudo docker rm loan-api || true
-
-            # 6. 포트 정리 및 대기 (기존 로직 유지)
-            fuser -k 8000/tcp || true
-            sleep 2
-            
-            # 7. 새 컨테이너 실행
-            sudo docker run -d --name loan-api -p 8000:8000 loan-api-server
+      # 5. ECS 서비스 업데이트 (새 이미지로 재배포)
+      - name: Deploy to ECS
+        run: |
+          aws ecs update-service \
+            --cluster $ECS_CLUSTER \
+            --service $ECS_SERVICE \
+            --desired-count 1 \
+            --force-new-deployment \
+            --region $AWS_REGION
+          echo "ECS 서비스 재배포 시작!"

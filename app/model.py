@@ -4,6 +4,8 @@ import joblib
 import pandas as pd 
 from typing import Any
 from pathlib import Path
+import boto3
+
 
 logger = logging.getLogger(__name__)
 
@@ -30,28 +32,28 @@ class LoanModel :
         self.feature_names: list[str] = []
         self.threshold: float = 0.5
         self.model_version: str = "1.0.0"
-
-    def load(self, model_dir: str = "models") -> None:
-        # 스크립트 위치를 기준으로 모델 디렉토리 경로 계산
-        script_dir = Path(__file__).parent
-        model_path = script_dir.parent / model_dir
+    # MODEL_BUCKET MODEL_PREFIX
+    def load(self) -> None:
+        bucket = os.environ.get("MODEL_BUCKET")
+        prefix = os.environ.get("MODEL_PREFIX")
+       
+        self._load_from_s3(bucket, prefix)
         
-        pipeline_path = model_path / "loan_pipeline.pkl"
-        encoder_path = model_path / "label_encoders.pkl"
-        feature_names_path = model_path / "feature_names.pkl"
+    def _load_from_s3(self, bucket: str, prefix: str) -> None:
+        logger.info(f"S3에서 모델 로드: s3://{bucket}/{prefix}/")
+        s3 = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-northeast-2"))
 
-        if not pipeline_path.exists():
-            raise FileNotFoundError(f"모델 파일을 찾을 수 없습니다: {pipeline_path}")
-        if not encoder_path.exists():
-            raise FileNotFoundError(f"라벨 인코더 파일을 찾을 수 없습니다: {encoder_path}")
-        if not feature_names_path.exists():
-            raise FileNotFoundError(f"특성 이름 파일을 찾을 수 없습니다: {feature_names_path}")
+        self.pipeline = self._load_pkl_from_s3(s3, bucket, f"{prefix}/loan_pipeline.pkl")
+        self.label_encoders = self._load_pkl_from_s3(s3, bucket, f"{prefix}/label_encoders.pkl")
+        self.feature_names = self._load_pkl_from_s3(s3, bucket, f"{prefix}/feature_names.pkl")
 
-        self.pipeline = joblib.load(pipeline_path)
-        self.label_encoders = joblib.load(encoder_path)
-        self.feature_names = joblib.load(feature_names_path)
+        logger.info("S3 모델 로드 완료")
 
-        logging.info("모델 로드 완료")
+    @staticmethod
+    def _load_pkl_from_s3(s3, bucket: str, key: str):
+        response = s3.get_object(Bucket=bucket, Key=key)
+        return joblib.load(io.BytesIO(response["Body"].read()))
+    
     
     @staticmethod
     def _map_to_korean(data: dict[str, Any]) -> dict[str, Any]:

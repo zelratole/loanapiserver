@@ -4,3 +4,4 @@ joblib
 pandas
 scikit-learn
 xgboost
+boto3

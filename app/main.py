@@ -1,10 +1,21 @@
 from contextlib import asynccontextmanager
+import datetime
 from http.client import HTTPException
+import json
 import logging
+import uuid
+
+from dotenv import load_dotenv
 
 from app.model import LoanModel
 from app.schemas import LoanRequest, LoanResponse
 from fastapi import FastAPI
+
+
+from pathlib import Path
+env_path = Path("__file__").resolve().parent / ".env"
+load_dotenv(dotenv_path= env_path, override=False)
+
 
 
 logging.basicConfig(level=logging.INFO)
@@ -42,22 +53,40 @@ async def health_check():
         "model_loaded" : model_loaded
     }
 
-@app.post("/predict", response_model = LoanResponse)
+@app.post("/predict", response_model=LoanResponse)
 async def predict(request: LoanRequest):
     model = app.state.model
+    request_id = str(uuid.uuid4())
+    
+    
+    start_time = datetime.now()
 
     try:
-
         result = model.predict(request.model_dump())
-        LoanResponse(**result)
-    
+        latency_ms = (datetime.now() - start_time).total_seconds() * 1000
+
+        # CloudWatch에 남을 예측 로그
+        log_data = {
+            "request_id": request_id,
+            "timestamp": start_time.isoformat(),
+            **request.model_dump(),
+            "approved": result["approved"],
+            "probability": result["probability"],
+            "risk_grade": result["risk_grade"],
+            "model_version": model.model_version,
+            "latency_ms": round(latency_ms, 2)
+        }
+        logger.info(f"PREDICTION_LOG: {json.dumps(log_data, ensure_ascii=False)}")
+        
+
+        return LoanResponse(**result)
+
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=422, detail="입력값처리오류")
     except Exception as e:
         raise HTTPException(status_code=500)
-
 
 
 
