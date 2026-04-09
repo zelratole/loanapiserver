@@ -6,7 +6,7 @@ on:
 
 env:
   AWS_REGION: ap-northeast-2
-  ECR_REPOSITORY: mlops-lab-cluster/student-16    # 본인 번호로 변경
+  ECR_REPOSITORY: mlops-lab/student-16    # 본인 번호로 변경
   ECS_CLUSTER: mlops-lab-cluster
   ECS_SERVICE: student-16-loan-api-service-91k5qgcr     # 본인 번호로 변경
   ECS_TASK_DEFINITION: student-16-loan-api # 본인 번호로 변경
